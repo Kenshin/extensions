@@ -194,9 +194,9 @@ export default function Command() {
     fetchUnrdist();
   }, []);
 
-  if (state.error) {
-    showToast(ToastStyle.Failure, 'Failed to get. Please confirm simpread_config.json it exists.');
-  }
+  //if (state.error) {
+  //  showToast(ToastStyle.Failure, 'Failed to get. Please confirm simpread_config.json it exists.');
+  //}
 
   return <List isLoading={state.items === undefined}>{state.items}</List>;
 }
