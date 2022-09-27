@@ -11,6 +11,7 @@ import {
   LocalStorage,
   Color,
 } from '@raycast/api';
+import { info } from 'console';
 import { readFileSync } from 'fs';
 import { useEffect, useState } from 'react';
 import { URL } from 'url';
@@ -121,6 +122,7 @@ export default function Command() {
               };
             })
             .map((info: Unread, idx: number) => (
+              info.archive?null:
               <List.Item
                 key={idx.toString()}
                 title={{

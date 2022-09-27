@@ -14,6 +14,13 @@
       "subtitle": "SimpRead",
       "description": "Browse SimpRead Posts",
       "mode": "view"
+    },
+    {
+      "name": "sra",
+      "title": "Browse Activated Posts",
+      "subtitle": "SimpRead",
+      "description": "Browse SimpRead Activated Posts",
+      "mode": "view"
     }
   ],
   "preferences": [
