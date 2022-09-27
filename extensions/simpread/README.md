@@ -71,17 +71,17 @@ Raycast extension for search and open [SimpRead Unreader](https://simpread.pro/p
 
 ![Welcome](https://user-images.githubusercontent.com/81074/143815702-f4822899-862a-4814-8354-088237a5bba4.png)
 
-### Show Unrader
+### Show Unreader
 
-![2021-11-29_13-35-51](https://user-images.githubusercontent.com/81074/143815341-b26cb8ba-dac9-45f9-8321-85fee9ed3aec.png)
+![](metadata/simpread-1.png)
 
 ### Show Unrreader Detail
 
-![2021-11-29_13-39-18](https://user-images.githubusercontent.com/81074/143815342-414b37df-3a13-4974-8ab4-a34769bd1fbb.png)
+![](metadata/simpread-2.png)
 
-### Open Local File
+### Open Local/Annote File & Read Mode
 
-![2021-11-29_13-40-45](https://user-images.githubusercontent.com/81074/143815343-ae525a66-1443-4a73-9f28-0a78d121f3c7.png)
+![](metadata/simpread-3.png)
 
 ### Setting SimpRead config Path
 
