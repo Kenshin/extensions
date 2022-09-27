@@ -1,21 +1,21 @@
 import {
   ActionPanel,
-  OpenInBrowserAction,
   Icon,
-  ImageMask,
   List,
-  PushAction,
   Detail,
-  getLocalStorageItem,
   getPreferenceValues,
   showToast,
-  ToastStyle,
+  Toast,
+  Action,
+  Image,
+  LocalStorage,
+  Color,
 } from '@raycast/api';
 import { readFileSync } from 'fs';
 import { useEffect, useState } from 'react';
 import { URL } from 'url';
 
-const TurndownService = require('turndown');
+// const TurndownService = require('turndown');
 
 interface Preferences {
   path: string;
@@ -31,6 +31,7 @@ interface Unread {
   idx: number;
   url: string;
   title: string;
+  hostname: string;
   create: string;
   icon: string;
   favicon?: string;
@@ -38,7 +39,14 @@ interface Unread {
   desc?: string;
   note?: string;
   tags?: string[];
-  annotations: Annote[];
+  annotations?: Annote[];
+}
+
+function urlHostname(url: string) {
+  try {
+    return new URL(url).hostname;
+  }
+  catch (e) { return e; }
 }
 
 interface Annote {
@@ -51,69 +59,28 @@ interface Annote {
 }
 
 function getDetail(unread: Unread) {
-  const turndown = new TurndownService(),
-    fmtDate = (date: Date) => {
-      const format = (value: any) => (value = value < 10 ? '0' + value : value);
-      return (
-        date.getFullYear() +
-        '/' +
-        format(date.getMonth() + 1) +
-        '-' +
-        format(date.getDate()) +
-        ' ' +
-        format(date.getHours()) +
-        ':' +
-        format(date.getMinutes()) +
-        ':' +
-        format(date.getSeconds())
-      );
-    };
-  let tags = '',
-    annotes = '';
-  unread.tags && unread.tags.forEach((tag: string) => (tags += `#${tag} `));
-  unread.annotations &&
-    unread.annotations.forEach((annote: Annote) => {
-      let tags = '',
-        content = '';
-      if (annote.type == 'paragraph') {
-        content = turndown.turndown(annote.html);
-      } else if (annote.type == 'img') {
-        content = `![](${annote.text})`;
-      } else if (annote.type == 'code') {
-        content = '```\n' + annote.text.trim() + '\n```';
-      }
-      annote.tags && annote.tags.forEach((tag) => (tags += `#${tag} `));
-      const date = new Date(annote.id),
-        note = annote.note ? `> ${annote.note}` : '';
-      annotes += `
-${content}
+  let ans = '';
+  if (unread.annotations) {
+    unread.annotations?.forEach(an => {
+      // Match if annotation is an image.
+      if (/^http[s]?.*\.(png|jpg|jpeg|gif)$/gmi.test(an.text)) { an.text = `![](${an.text})` }
+      ans += `${an.text}
 
-${note}
+> ${an.note}
 
-${tags}
+---
 
-> ${fmtDate(date)}
-
-***
 `;
-    });
-  const host = new URL(unread.url).hostname,
-    desc = unread.desc ? `> ${unread.desc}` : '',
-    note = unread.note ? `> ${unread.note}` : '',
-    template = `
-# ${unread.title}
+    })
+  } else ans += '无笔记';
 
-> Origin url [${host}](${unread.url}) at ${unread.create}
+  return `# ${unread.title}
 
-${desc}
+> ${unread.desc}
 
-${note}
+## 笔记
 
-${tags.trim()}
-
-${annotes.trim().replace(/\*\*\*$/, '')}
-`;
-  return template;
+${ans}`
 }
 
 export default function Command() {
@@ -124,7 +91,7 @@ export default function Command() {
     async function fetchUnrdist() {
       try {
         const favicon = 'favicon@default.png',
-          path = await getLocalStorageItem('simpread_config_path'),
+          path = await LocalStorage.getItem('simpread_config_path'),
           config = readFileSync(!path ? preferences.path : path + '', 'utf8'),
           unrdist = JSON.parse(config).unrdist,
           items = unrdist
@@ -142,40 +109,65 @@ export default function Command() {
                 id: unread.idx,
                 title: unread.title,
                 icon: icon,
-                lastModifiedAt: now,
+                create: unread.create,
+                annotations: unread.annotations,
                 desc: unread.desc,
                 url: unread.url,
+                hostname: urlHostname(unread.url),
+                tags: unread.tags,
                 markdown: getDetail(unread),
               };
             })
             .map((info: Unread, idx: number) => (
               <List.Item
                 key={idx.toString()}
-                title={info.title}
-                subtitle={info.desc}
-                icon={{ source: info.icon, mask: ImageMask.Circle }}
+                title={{
+                  value: info.id.toString() + " - " + info.title,
+                  tooltip: info.desc || "No description!"
+                }}
+                accessories={[
+                  { text: (info.annotations != null ? info.annotations.length : 0).toString(), icon: Icon.Pencil },
+                  { text: info.create.slice(0, 11) }]}
+                icon={{ source: info.icon, mask: Image.Mask.Circle }}
                 actions={
                   <ActionPanel>
                     <ActionPanel.Section>
-                      <OpenInBrowserAction title="Open Origin URL" url={info.url} />
-                      <PushAction
+                      <Action.OpenInBrowser title="Open Origin URL" url={info.url} />
+                      <Action.Push
                         title="Show Details"
-                        target={<Detail markdown={info.markdown} />}
+                        target={<Detail
+                          markdown={info.markdown}
+                          navigationTitle="Post Detail"
+                          metadata={
+                            <Detail.Metadata>
+                              <Detail.Metadata.TagList title="Tags">
+                                {
+                                  info.tags?.map((tag, i) => {
+                                    let colors = [Color.Blue, Color.Green, Color.Red, Color.Yellow]
+                                    return <Detail.Metadata.TagList.Item key={i} text={tag} color={colors[i % 4]} />
+                                  })
+                                }
+                              </Detail.Metadata.TagList>
+                              <Detail.Metadata.Link title="Origin URL" target={info.url} text={info.hostname} />
+                              <Detail.Metadata.Label title='Create At' text={info.create} />
+                              <Detail.Metadata.Label title='Notes' text={info.annotations?.length.toString()} />
+                            </Detail.Metadata>
+                          } />}
                         icon={{ source: 'sidebar-right-16' }}
                       />
-                      <OpenInBrowserAction
+                      <Action.OpenInBrowser
                         title="Open Local File"
                         url={'http://localhost:7026/reading/' + info.id}
                         icon={Icon.Desktop}
                         shortcut={{ modifiers: ['cmd'], key: 'l' }}
                       />
-                      <OpenInBrowserAction
+                      <Action.OpenInBrowser
                         title="Open Annote File"
                         url={'http://localhost:7026/unread/' + info.id}
                         icon={Icon.Desktop}
                         shortcut={{ modifiers: ['cmd'], key: 'l' }}
                       />
-                      <OpenInBrowserAction
+                      <Action.OpenInBrowser
                         title="Open URL Scheme"
                         url={'simpread://open?type=unread&idx=' + info.id}
                         icon={Icon.Desktop}
@@ -194,9 +186,15 @@ export default function Command() {
     fetchUnrdist();
   }, []);
 
-  //if (state.error) {
-  //  showToast(ToastStyle.Failure, 'Failed to get. Please confirm simpread_config.json it exists.');
-  //}
+  if (state.error) {
+    showToast(Toast.Style.Failure, state.error.toString());
+  }
 
-  return <List isLoading={state.items === undefined}>{state.items}</List>;
+  return <List
+    enableFiltering={true}
+    navigationTitle="Browse Posts"
+    searchBarPlaceholder="Search titles"
+    isLoading={state.items === undefined}>
+    {state.items}
+  </List>;
 }
