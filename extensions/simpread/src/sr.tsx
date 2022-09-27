@@ -165,13 +165,13 @@ export default function Command() {
                         title="Open Annote File"
                         url={'http://localhost:7026/unread/' + info.id}
                         icon={Icon.Desktop}
-                        shortcut={{ modifiers: ['cmd'], key: 'l' }}
+                        shortcut={{ modifiers: ['cmd'], key: 'a' }}
                       />
                       <Action.OpenInBrowser
                         title="Open URL Scheme"
                         url={'simpread://open?type=unread&idx=' + info.id}
                         icon={Icon.Desktop}
-                        shortcut={{ modifiers: ['cmd'], key: 'l' }}
+                        shortcut={{ modifiers: ['cmd'], key: 's' }}
                       />
                     </ActionPanel.Section>
                   </ActionPanel>
